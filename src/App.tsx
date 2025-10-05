@@ -3,7 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { Sidebar } from "./components/Sidebar";
+import Dashboard from "./pages/Dashboard";
+import Escritorio from "./pages/Escritorio";
+import Productos from "./pages/Productos";
+import Vender from "./pages/Vender";
+import Caja from "./pages/Caja";
+import Reportes from "./pages/Reportes";
+import Usuarios from "./pages/Usuarios";
+import Ajustes from "./pages/Ajustes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +22,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="flex min-h-screen w-full bg-background">
+          <Sidebar />
+          <div className="flex-1 flex flex-col">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/escritorio" element={<Escritorio />} />
+              <Route path="/productos" element={<Productos />} />
+              <Route path="/vender" element={<Vender />} />
+              <Route path="/caja" element={<Caja />} />
+              <Route path="/reportes" element={<Reportes />} />
+              <Route path="/graficas" element={<Escritorio />} />
+              <Route path="/usuarios" element={<Usuarios />} />
+              <Route path="/ajustes" element={<Ajustes />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
