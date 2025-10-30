@@ -18,6 +18,7 @@ import Ajustes from "./pages/Ajustes";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Perfil from "./pages/Perfil";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ function AppContent() {
           <Route path="/graficas" element={<Escritorio />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/ajustes" element={<Ajustes />} />
+          <Route path="/perfil" element={<Perfil />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

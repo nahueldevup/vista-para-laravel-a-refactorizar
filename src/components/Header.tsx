@@ -1,5 +1,6 @@
 import { Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   title: string;
@@ -7,6 +8,8 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <header className="bg-card border-b border-border sticky top-0 z-10">
       <div className="flex items-center justify-between px-6 py-4">
@@ -23,7 +26,12 @@ export function Header({ title, subtitle }: HeaderProps) {
         
         <div className="flex items-center gap-3">
           <span className="text-sm text-foreground">Hola, parzibyte</span>
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full"
+            onClick={() => navigate("/perfil")}
+          >
             <User className="w-5 h-5" />
           </Button>
         </div>
