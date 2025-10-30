@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Minus, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Minus, Edit, Trash2, FolderPlus, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -47,7 +47,17 @@ export default function Productos() {
   ]);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categories, setCategories] = useState<string[]>([
+    "Bebidas",
+    "Panadería",
+    "Lácteos",
+    "Carnes",
+    "Frutas y Verduras",
+  ]);
   const [newProduct, setNewProduct] = useState({
     barcode: "",
     description: "",
@@ -74,6 +84,21 @@ export default function Productos() {
     });
   };
 
+  const handleAddCategory = () => {
+    if (newCategoryName.trim() && !categories.includes(newCategoryName.trim())) {
+      setCategories([...categories, newCategoryName.trim()]);
+      setNewCategoryName("");
+    }
+  };
+
+  const handleDeleteCategory = (category: string) => {
+    setCategories(categories.filter((c) => c !== category));
+  };
+
+  const filteredCategories = categories.filter((category) =>
+    category.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
   return (
     <div className="flex-1 flex flex-col">
       <Header title="proyecto" subtitle="Inventario" />
@@ -90,6 +115,14 @@ export default function Productos() {
                 className="pl-10"
               />
             </div>
+            <Button
+              onClick={() => setIsCategoryDialogOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FolderPlus className="w-5 h-5" />
+              Categorías
+            </Button>
           </div>
 
           <div className="bg-card rounded-lg border border-border">
@@ -236,6 +269,79 @@ export default function Productos() {
             </Button>
             <Button onClick={handleSaveProduct} className="bg-success hover:bg-success/90">
               GUARDAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Categories Management Dialog */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gestionar Categorías</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Search Categories */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar categoría..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Add New Category */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nueva categoría"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddCategory()}
+              />
+              <Button
+                onClick={handleAddCategory}
+                disabled={!newCategoryName.trim()}
+                className="bg-success hover:bg-success/90"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Categories List */}
+            <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
+              {filteredCategories.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  {categorySearch ? "No se encontraron categorías" : "No hay categorías"}
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {filteredCategories.map((category, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 hover:bg-accent/50 transition-colors"
+                    >
+                      <span className="font-medium">{category}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteCategory(category)}
+                        className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCategoryDialogOpen(false)}>
+              CERRAR
             </Button>
           </DialogFooter>
         </DialogContent>
