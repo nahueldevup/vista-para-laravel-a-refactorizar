@@ -82,6 +82,17 @@ export default function Login() {
               <Button
                 type="button"
                 variant="link"
+                onClick={() => navigate("/forgot-password")}
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                ¿Olvidaste tu contraseña?
+              </Button>
+            </div>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
                 className="text-primary"
                 onClick={() => navigate("/register")}
               >

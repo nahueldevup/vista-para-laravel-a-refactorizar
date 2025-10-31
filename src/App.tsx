@@ -17,6 +17,7 @@ import Usuarios from "./pages/Usuarios";
 import Ajustes from "./pages/Ajustes";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 import Perfil from "./pages/Perfil";
 
@@ -24,7 +25,7 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/forgot-password";
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -33,6 +34,7 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/escritorio" element={<Escritorio />} />
           <Route path="/productos" element={<Productos />} />
