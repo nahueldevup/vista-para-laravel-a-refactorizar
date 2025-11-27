@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
+import { SidebarProvider } from "./contexts/SidebarContext";
 import Dashboard from "./pages/Dashboard";
 import Escritorio from "./pages/Escritorio";
 import Productos from "./pages/Productos";
@@ -62,7 +63,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppContent />
+        <SidebarProvider>
+          <AppContent />
+        </SidebarProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
