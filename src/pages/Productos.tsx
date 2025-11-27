@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Minus, Edit, Trash2, FolderPlus, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -18,6 +19,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -33,6 +42,7 @@ interface Product {
 }
 
 export default function Productos() {
+  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([
     {
       id: 1,
@@ -47,10 +57,13 @@ export default function Productos() {
   ]);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [categories, setCategories] = useState<string[]>([
     "Bebidas",
     "Panadería",
@@ -59,6 +72,14 @@ export default function Productos() {
     "Frutas y Verduras",
   ]);
   const [newProduct, setNewProduct] = useState({
+    barcode: "",
+    description: "",
+    purchasePrice: "",
+    salePrice: "",
+    stock: "",
+    existence: "",
+  });
+  const [editProduct, setEditProduct] = useState({
     barcode: "",
     description: "",
     purchasePrice: "",
@@ -98,6 +119,81 @@ export default function Productos() {
   const filteredCategories = categories.filter((category) =>
     category.toLowerCase().includes(categorySearch.toLowerCase())
   );
+
+  const handleIncreaseExistence = (productId: number) => {
+    setProducts(products.map(p => 
+      p.id === productId ? { ...p, existence: p.existence + 1 } : p
+    ));
+    toast({
+      title: "Existencia aumentada",
+      description: "Se agregó 1 unidad al producto",
+    });
+  };
+
+  const handleDecreaseExistence = (productId: number) => {
+    setProducts(products.map(p => 
+      p.id === productId && p.existence > 0 ? { ...p, existence: p.existence - 1 } : p
+    ));
+    toast({
+      title: "Existencia reducida",
+      description: "Se removió 1 unidad del producto",
+    });
+  };
+
+  const handleEditProduct = (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setEditProduct({
+        barcode: product.barcode,
+        description: product.description,
+        purchasePrice: product.purchasePrice.toString(),
+        salePrice: product.salePrice.toString(),
+        stock: product.stock.toString(),
+        existence: product.existence.toString(),
+      });
+      setSelectedProductId(productId);
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (selectedProductId) {
+      setProducts(products.map(p => 
+        p.id === selectedProductId ? {
+          ...p,
+          barcode: editProduct.barcode,
+          description: editProduct.description,
+          purchasePrice: parseFloat(editProduct.purchasePrice) || 0,
+          salePrice: parseFloat(editProduct.salePrice) || 0,
+          stock: parseInt(editProduct.stock) || 0,
+          existence: parseInt(editProduct.existence) || 0,
+        } : p
+      ));
+      toast({
+        title: "Producto actualizado",
+        description: "Los cambios se guardaron correctamente",
+      });
+      setIsEditDialogOpen(false);
+      setSelectedProductId(null);
+    }
+  };
+
+  const handleDeleteProduct = (productId: number) => {
+    setSelectedProductId(productId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteProduct = () => {
+    if (selectedProductId) {
+      setProducts(products.filter(p => p.id !== selectedProductId));
+      toast({
+        title: "Producto eliminado",
+        description: "El producto ha sido removido del inventario",
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedProductId(null);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -165,16 +261,36 @@ export default function Productos() {
                     <TableCell>{product.stock}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDecreaseExistence(product.id)}
+                        >
                           <Minus className="w-4 h-4 text-warning" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleIncreaseExistence(product.id)}
+                        >
                           <Plus className="w-4 h-4 text-info" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleEditProduct(product.id)}
+                        >
                           <Edit className="w-4 h-4 text-warning" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
@@ -274,6 +390,79 @@ export default function Productos() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Product Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar producto</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-barcode">Código de barras</Label>
+              <Input
+                id="edit-barcode"
+                value={editProduct.barcode}
+                onChange={(e) => setEditProduct({ ...editProduct, barcode: e.target.value })}
+                placeholder="Código de barras"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Descripción</Label>
+              <Textarea
+                id="edit-description"
+                value={editProduct.description}
+                onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+                placeholder="Descripción"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Precios</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  placeholder="Compra"
+                  type="number"
+                  value={editProduct.purchasePrice}
+                  onChange={(e) => setEditProduct({ ...editProduct, purchasePrice: e.target.value })}
+                />
+                <Input
+                  placeholder="Venta"
+                  type="number"
+                  value={editProduct.salePrice}
+                  onChange={(e) => setEditProduct({ ...editProduct, salePrice: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                placeholder="Stock"
+                type="number"
+                value={editProduct.stock}
+                onChange={(e) => setEditProduct({ ...editProduct, stock: e.target.value })}
+              />
+              <Input
+                placeholder="Existencia actual"
+                type="number"
+                value={editProduct.existence}
+                onChange={(e) => setEditProduct({ ...editProduct, existence: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
+              CERRAR
+            </Button>
+            <Button onClick={handleSaveEdit} className="bg-success hover:bg-success/90">
+              GUARDAR CAMBIOS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Categories Management Dialog */}
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
         <DialogContent className="max-w-md">
@@ -346,6 +535,29 @@ export default function Productos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El producto será eliminado permanentemente del inventario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>
+              CANCELAR
+            </Button>
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeleteProduct}
+            >
+              ELIMINAR
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
