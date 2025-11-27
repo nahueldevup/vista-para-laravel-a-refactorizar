@@ -2,6 +2,9 @@ import { Home, LayoutGrid, Package, ShoppingCart, Wallet, FileText, BarChart3, U
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useSidebarContext } from "@/contexts/SidebarContext";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { title: "Inicio", icon: Home, path: "/" },
@@ -30,6 +33,8 @@ const otherSubmenu = [
 export function Sidebar() {
   const navigate = useNavigate();
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const { isOpen, toggleSidebar } = useSidebarContext();
+  const isMobile = useIsMobile();
 
   const toggleSubmenu = (title: string) => {
     setOpenSubmenu(openSubmenu === title ? null : title);
@@ -39,10 +44,15 @@ export function Sidebar() {
     navigate("/login");
   };
 
-  return (
-    <aside className="w-60 bg-card border-r border-border h-screen sticky top-0 flex flex-col">
+  const sidebarContent = (
+    <>
       <div className="p-4 border-b border-border">
-        <h1 className="text-lg font-semibold text-foreground">Tienda</h1>
+        <h1 className={cn(
+          "text-lg font-semibold text-foreground transition-opacity duration-300",
+          !isOpen && !isMobile && "opacity-0"
+        )}>
+          {(isOpen || isMobile) && "Tienda"}
+        </h1>
       </div>
       
       <nav className="flex-1 overflow-y-auto py-4">
@@ -58,7 +68,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className="w-5 h-5" />
-                  <span>{item.title}</span>
+                  {(isOpen || isMobile) && <span>{item.title}</span>}
                 </button>
                 {openSubmenu === item.title && (
                   <div className="ml-8 mt-1 space-y-1">
@@ -89,7 +99,7 @@ export function Sidebar() {
                   )}
                 >
                   <item.icon className="w-5 h-5" />
-                  <span>{item.title}</span>
+                  {(isOpen || isMobile) && <span>{item.title}</span>}
                 </button>
                 {openSubmenu === item.title && (
                   <div className="ml-8 mt-1 space-y-1">
@@ -133,12 +143,33 @@ export function Sidebar() {
                 }
               >
                 <item.icon className="w-5 h-5" />
-                <span>{item.title}</span>
+                {(isOpen || isMobile) && <span>{item.title}</span>}
               </NavLink>
             )}
           </div>
         ))}
       </nav>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={toggleSidebar}>
+        <SheetContent side="left" className="w-60 p-0">
+          <aside className="w-60 bg-card h-full flex flex-col">
+            {sidebarContent}
+          </aside>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <aside className={cn(
+      "bg-card border-r border-border h-screen sticky top-0 flex flex-col transition-all duration-300",
+      isOpen ? "w-60" : "w-16"
+    )}>
+      {sidebarContent}
     </aside>
   );
 }
