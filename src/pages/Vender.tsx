@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingCart, X, Trash2, Check } from "lucide-react";
+import { Search, Trash2, Plus, Minus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -39,6 +40,10 @@ interface CartItem {
 }
 
 export default function Vender() {
+  const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,
@@ -52,9 +57,33 @@ export default function Vender() {
   
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [showButtons, setShowButtons] = useState(false);
-  const [amountReceived, setAmountReceived] = useState("20000");
+  const [amountReceived, setAmountReceived] = useState("");
   const [customerType, setCustomerType] = useState("display");
+
+  // Auto-enfoque en búsqueda al cargar
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
+  // Auto-enfoque en monto al abrir checkout
+  useEffect(() => {
+    if (isCheckoutOpen) {
+      setTimeout(() => amountInputRef.current?.focus(), 100);
+      setAmountReceived(total.toString());
+    }
+  }, [isCheckoutOpen]);
+
+  // Atajo F9 para abrir checkout
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F9" && cartItems.length > 0 && !isCheckoutOpen) {
+        e.preventDefault();
+        handleCheckout();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cartItems.length, isCheckoutOpen]);
 
   const total = cartItems.reduce((sum, item) => sum + item.total, 0);
   const payment = parseFloat(amountReceived) || 0;
@@ -71,7 +100,47 @@ export default function Vender() {
   const confirmCancelSale = () => {
     setCartItems([]);
     setIsCancelDialogOpen(false);
-    setShowButtons(false);
+    searchInputRef.current?.focus();
+  };
+
+  const updateQuantity = (itemId: number, delta: number) => {
+    setCartItems(
+      cartItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              quantity: Math.max(1, item.quantity + delta),
+              total: Math.max(1, item.quantity + delta) * item.price,
+            }
+          : item
+      )
+    );
+  };
+
+  const removeItem = (itemId: number) => {
+    setCartItems(cartItems.filter((item) => item.id !== itemId));
+    toast({
+      title: "Producto eliminado",
+      description: "El producto ha sido removido del carrito",
+    });
+  };
+
+  const completeSale = () => {
+    // Aquí iría la lógica para guardar la venta
+    toast({
+      title: "Venta completada",
+      description: `Cambio: $${change.toFixed(2)}`,
+    });
+    setCartItems([]);
+    setIsCheckoutOpen(false);
+    setAmountReceived("");
+    searchInputRef.current?.focus();
+  };
+
+  const handleAmountKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && payment >= total) {
+      completeSale();
+    }
   };
 
   return (
@@ -84,10 +153,15 @@ export default function Vender() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
+                ref={searchInputRef}
                 placeholder="Escanear código o escribir el nombre del producto y presionar Enter"
-                className="pl-10"
+                className="pl-10 text-base"
+                autoComplete="off"
               />
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Presiona <kbd className="px-2 py-1 text-xs font-semibold border rounded bg-muted">F9</kbd> para terminar venta rápidamente
+            </p>
           </div>
 
           <div className="bg-card rounded-lg border border-border mb-6">
@@ -116,36 +190,39 @@ export default function Vender() {
                     <TableCell>{item.barcode}</TableCell>
                     <TableCell>{item.description}</TableCell>
                     <TableCell>
-                      <Input
-                        type="number"
-                        value={item.quantity}
-                        className="w-20"
-                        onChange={(e) => {
-                          const newQuantity = parseInt(e.target.value) || 1;
-                          setCartItems(
-                            cartItems.map((i) =>
-                              i.id === item.id
-                                ? { ...i, quantity: newQuantity, total: newQuantity * i.price }
-                                : i
-                            )
-                          );
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>$ {item.price.toFixed(2)}</TableCell>
-                    <TableCell>$ {item.total.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                          <ShoppingCart className="w-4 h-4 text-success" />
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          onClick={() => updateQuantity(item.id, -1)}
+                        >
+                          <Minus className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                          <X className="w-4 h-4 text-warning" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                        <span className="w-12 text-center font-semibold">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
+                          <Plus className="w-4 h-4" />
                         </Button>
                       </div>
+                    </TableCell>
+                    <TableCell>$ {item.price.toFixed(2)}</TableCell>
+                    <TableCell className="font-semibold">$ {item.total.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -154,7 +231,7 @@ export default function Vender() {
           </div>
 
           {/* Action Buttons */}
-          {!showButtons && cartItems.length > 0 && (
+          {cartItems.length > 0 && (
             <div className="flex justify-end gap-4">
               <Button
                 variant="outline"
@@ -169,34 +246,7 @@ export default function Vender() {
                 onClick={handleCheckout}
                 className="bg-success hover:bg-success/90 text-success-foreground"
               >
-                Al contado
-              </Button>
-            </div>
-          )}
-
-          {showButtons && (
-            <div className="fixed bottom-8 right-8 flex gap-4">
-              <Button
-                size="lg"
-                variant="outline"
-                className="rounded-full w-14 h-14 shadow-lg bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={handleCancelSale}
-              >
-                <Trash2 className="w-6 h-6" />
-              </Button>
-              <Button
-                size="lg"
-                className="rounded-full w-14 h-14 shadow-lg bg-primary"
-                onClick={() => setShowButtons(false)}
-              >
-                <X className="w-6 h-6" />
-              </Button>
-              <Button
-                size="lg"
-                className="rounded-full w-14 h-14 shadow-lg bg-success hover:bg-success/90"
-                onClick={handleCheckout}
-              >
-                <Check className="w-6 h-6" />
+                Terminar venta (F9)
               </Button>
             </div>
           )}
@@ -216,14 +266,19 @@ export default function Vender() {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
                 <Input
+                  ref={amountInputRef}
                   id="amount"
                   type="number"
                   value={amountReceived}
                   onChange={(e) => setAmountReceived(e.target.value)}
-                  className="pl-8"
+                  onKeyDown={handleAmountKeyDown}
+                  className="pl-8 text-lg"
+                  autoComplete="off"
                 />
               </div>
-              <p className="text-xs text-info">¿Con cuánto paga el cliente?</p>
+              <p className="text-xs text-muted-foreground">
+                Presiona <kbd className="px-1.5 py-0.5 text-xs font-semibold border rounded bg-muted">Enter</kbd> para completar la venta
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -258,10 +313,14 @@ export default function Vender() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsCheckoutOpen(false)}>
-              CERRAR
+              CERRAR (Esc)
             </Button>
-            <Button className="bg-success hover:bg-success/90">
-              TERMINAR VENTA
+            <Button
+              className="bg-success hover:bg-success/90"
+              onClick={completeSale}
+              disabled={payment < total}
+            >
+              TERMINAR VENTA (Enter)
             </Button>
           </DialogFooter>
         </DialogContent>
